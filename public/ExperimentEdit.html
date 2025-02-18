@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<head>
+    
+</head>
+<body>
+    <H1 id="experimentName" class="editable">Enter Experiment Name</H1>
+    <div style="display: flex; flex-direction: row;">
+    <div id="experimentMainBody" class="editable"> 
+    </div>
+    <div id="relatedExperiments">
+        <div id="parentExperiments">Parent Experiments:</div>
+        <div id="derivedExperiments">Derived Experiments:</div>
+    </div>
+    </div>
+
+    <script>
+        const pathParts = window.location.pathname.split('/');
+        const experimentId = pathParts[2];
+
+        // setting fields that can be edited to be editable
+        const editablefields = document.querySelectorAll('.editable');
+        editablefields.forEach(field => {
+            field.contentEditable = 'true';
+        })
+        
+        // for a new experiment just created
+        if (experimentId == 'new'){
+            editablefields.forEach(field => {
+                field.addEventListener('keydown', (event) => {
+                    
+                })
+            })
+        }
+    </script>
+</body>
