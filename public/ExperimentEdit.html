@@ -3,9 +3,15 @@
     
 </head>
 <body>
-    <H1 id="experimentName" class="editable">Enter Experiment Name</H1>
+    <H1 id="experimentName" class="editable" autofocus>Enter Experiment Name</H1>
     <div style="display: flex; flex-direction: row;">
-    <div id="experimentMainBody" class="editable"> 
+    <div id="experimentContent">
+        <div><b>Aim:</b></div>
+        <div id="experimentAim" class="editable" autofocus></div>
+        <div><b>Body:</b></div>
+        <div id="experimentMainBody" class="editable" autofocus></div>
+        <div><b>Conclusion:<b></div>
+        <div id="experimentConclusion" class="editable" autofocus></div>
     </div>
     <div id="relatedExperiments">
         <div id="parentExperiments">Parent Experiments:</div>
@@ -16,6 +22,8 @@
     <script>
         const pathParts = window.location.pathname.split('/');
         const experimentId = pathParts[2];
+        let inputTimeout;
+
 
         // setting fields that can be edited to be editable
         const editablefields = document.querySelectorAll('.editable');
@@ -23,13 +31,52 @@
             field.contentEditable = 'true';
         })
         
-        // for a new experiment just created
+        // new experiment mode for a new experiment being created
         if (experimentId == 'new'){
+            /* function that watches any for edits done on the new experiment, then calls the server to create new database entry for that experiment with the added content and exists new experiment mode*/
+            function fieldEditListener(e) {
+                const field = e.currentTarget;
+                clearTimeout(inputTimeout);
+                field.setAttribute('data-raw', field.textContent);
+
+                // waits for three seconds of inactivity before triggering database entry creation for the new experiment
+                inputTimeout = setTimeout(async ()=> { 
+                        //sends modfied info to the server and recieves experiment id (eId) for the new database row entry created
+                        const response = await fetch('/experiment/new/firstSave', {
+                            method: 'post',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({modifiedField: field.id, modifiedFieldContent: field.textContent})
+                        })
+                        // dealing with response: changes the url to /experiment/eId and close all event listeners created inside this if statement
+                        try{
+                            if(!response.ok){
+                                const responseContent = await response.json();
+                                throw responseContent;
+                            }
+                            const responseContent = await response.json();
+                            console.log('created experiment with id ', responseContent.eId);
+
+                            //changes the url to /experiment/eId
+                            const newPathname = `/experiment/${responseContent.eId}`;
+                            const newUrl = window.location.origin + newPathname + window.location.search + window.location.hash;
+                            history.replaceState({ path: newPathname }, '', newUrl);
+
+                            //removes all event listeners created inside this if statement helping quit the new experiment mode
+                            editablefields.forEach(field => {
+                                field.removeEventListener('input', fieldEditListener)
+                             })
+                        }catch(err){
+                            console.error(err);
+                        }
+                },3000);
+            };
+            //creates event listeners to all editable fields
             editablefields.forEach(field => {
-                field.addEventListener('keydown', (event) => {
-                    
-                })
+                field.addEventListener('input', fieldEditListener)
             })
         }
+        
     </script>
 </body>
