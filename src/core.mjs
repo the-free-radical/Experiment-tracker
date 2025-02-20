@@ -28,3 +28,17 @@ export function experimentFirstSave(modifiedInfo){
         throw new Error(err)
     }
 }
+
+export function getExperimentDataById(eId){
+    try{
+        const experiment = db.prepare(`SELECT * FROM mainTable WHERE eID = ?`).get(eId);
+        if(experiment!=null){
+            return experiment;
+        } else if(experiment==null){
+            console.log('no such experiment');
+            throw new Error('no such experiment');
+        }
+    } catch(err){
+        throw new Error(err);
+    }
+}

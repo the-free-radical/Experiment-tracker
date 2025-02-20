@@ -22,12 +22,32 @@ app.get('/experiment/new', (req,res)=>{
     res.sendFile(path.join(publicPath, 'ExperimentEdit.html'))
 })
 
+//sending experimentEdit.html (default experiment edit view)
+app.get('/experiment/open', (req,res)=>{
+    console.log(`openeing experiment no: ${req.query.eId}`)
+    res.sendFile(path.join(publicPath, 'ExperimentEdit.html'))
+})
+
+//saving a newly created experiment for the first time and sending it
 app.post('/experiment/new/firstSave', (req,res) => {
     try {
+        console.log(`saving new experiment`)
         const eId = utils.experimentFirstSave(req.body);
         res.json({eId: eId})
     }catch(err) {
         res.status(500).json(err.message)
+    }
+})
+
+//getting experiment data for a particular experiment
+app.get('/experiment/getData', (req,res) =>{
+    try{
+        console.log(`getting data for experiment no: ${req.query.eId}`)
+        const experimentData = utils.getExperimentDataById(req.query.eId);
+        console.log(`sending data`);
+        res.json(experimentData);
+    }catch(err){
+        res.status(500).json(err.message);
     }
 })
 
