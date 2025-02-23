@@ -51,6 +51,20 @@ app.get('/experiment/getData', (req,res) =>{
     }
 })
 
+app.post('/experiment/saveData', (req, res) => {
+    try{
+        console.log("--------------------------------");
+        console.log(`saving data for experiment ${req.query.eId}`);
+        const modifiedInfo = req.body;
+        const saveStatus = utils.saveExperimentDataById(req.query.eId, modifiedInfo);
+        console.log("--------------------------------");
+        res.json(saveStatus);
+    } catch(err){
+        console.error(err);
+        res.status(500).json(err.message)
+    }
+})
+
 app.listen(port, ()=>{
     console.log(`Server listening at http://localhost:${port}`);
 });

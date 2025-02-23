@@ -25,6 +25,7 @@
 
         //timeout variable to help create a buffer when saving changes to editable fields
         let inputTimeout;
+        let modifiedFieldsArray = [];
 
 
         // setting fields that can be edited to be editable
@@ -40,6 +41,11 @@
                 const field = e.currentTarget;
                 clearTimeout(inputTimeout);
                 field.setAttribute('data-raw', field.textContent);
+
+                // tracks the fields where changes have been made
+                if(!modifiedFieldsArray.includes(field)){
+                    modifiedFieldsArray.push(field)
+                }
 
                 // waits for three seconds of inactivity before triggering database entry creation for the new experiment
                 inputTimeout = setTimeout(async ()=> { 
@@ -69,6 +75,9 @@
                             editablefields.forEach(field => {
                                 field.removeEventListener('input', fieldEditListener)
                              })
+                            
+                            sendDataToBeSaved(responseContent.eId)
+                            openPageMaintenance();
                         }catch(err){
                             console.error(err);
                         }
@@ -79,9 +88,11 @@
                 field.addEventListener('input', fieldEditListener)
             })
         }
-        else if(pageOperation == 'open'){
+
+        if(pageOperation == 'open'){
             const urlParams = new URLSearchParams(window.location.search);
             getExperimentData(urlParams.get('eId'));
+            openPageMaintenance();
         }
 
         //getting details for experiment by eId
@@ -104,6 +115,64 @@
                 })
             }catch(err){
                 console.error(err);
+            }
+        }
+
+        async function openPageMaintenance(){
+        //event listeners for saving any changes made
+                editablefields.forEach(field => {
+                field.addEventListener('input', saveExperimentChanges);
+            })
+        }
+
+        //saving changes to editable fields
+        async function saveExperimentChanges(e){
+            const field = e.currentTarget;
+            clearTimeout(inputTimeout);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const eId = urlParams.get('eId');
+
+            // tracks the fields where changes have been made
+            if(!modifiedFieldsArray.includes(field)){
+                modifiedFieldsArray.push(field)
+            }
+
+            // saves the new text content to the attribute for latex handling
+            field.setAttribute('data-raw', field.textContent);
+            
+            //waits to builds a buffer of changes to be saved across different fields and sends aggregated data to the server
+            inputTimeout = setTimeout(async () => {                
+                console.log('saving data to the database');
+                sendDataToBeSaved(eId)
+            }, 3000)
+
+        }
+
+        // sends all changes to the server to be saved
+        async function sendDataToBeSaved(eId){
+            let modifiedData = [];    
+            modifiedFieldsArray.forEach(arrayElement => {
+                modifiedData.push({modifiedField: arrayElement.id, modifiedFieldContent: arrayElement.getAttribute('data-raw')})
+            })
+
+            try{
+                const response = await fetch(`/experiment/saveData?eId=${eId}`, {
+                    method: 'post',
+                    headers:{
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(modifiedData)
+                })
+                if(!response.ok){
+                    const responseContent = await response.json();
+                    console.error(responseContent)
+                }
+                const responseContent = await response.json();
+                console.log(responseContent.message);
+                modifiedFieldsArray = [];
+            } catch(err){
+                console.error(err)
             }
         }
 

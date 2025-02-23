@@ -42,3 +42,22 @@ export function getExperimentDataById(eId){
         throw new Error(err);
     }
 }
+
+//saves info to database when new data is added to any editable field of the experiment
+export function saveExperimentDataById(eId, modifiedInfo){
+    try {
+        let fieldsChanged = [];
+        modifiedInfo.forEach(row => {
+            const update = db.prepare(`UPDATE mainTable SET ${row.modifiedField} = ? WHERE eId = ?`);
+            const result = update.run(row.modifiedFieldContent, eId);
+            if (result.changes > 0){
+                console.log(`'${row.modifiedField}' set to '${row.modifiedFieldContent}'`)
+                fieldsChanged.push(`${row.modifiedField}' set to '${row.modifiedFieldContent}`)
+            }
+        })
+    return {message: fieldsChanged}
+    } catch(err){
+        console.log(err)
+        throw new Error(err)
+    }
+}
