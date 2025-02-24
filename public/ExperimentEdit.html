@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <head>
-    
+    <script>
+        window.MathJax = {
+          tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+          svg: { fontCache: 'global' }
+        };
+      </script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
     <H1 id="experimentName" class="editable" autofocus>Enter Experiment Name</H1>
@@ -32,6 +38,15 @@
         const editablefields = document.querySelectorAll('.editable');
         editablefields.forEach(field => {
             field.contentEditable = 'true';
+        })
+
+        editablefields.forEach(field => {
+            field.addEventListener('focus', () => {
+                field.innerHTML = field.getAttribute('data-raw');
+            })
+            field.addEventListener('blur', () => {
+                MathJax.typesetPromise([field]).catch((err)=>{console.error(err)});
+            })
         })
         
         // new experiment mode for a new experiment being created
