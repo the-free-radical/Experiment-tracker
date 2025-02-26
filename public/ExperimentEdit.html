@@ -9,19 +9,26 @@
       <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
-    <H1 id="experimentName" class="editable" autofocus>Enter Experiment Name</H1>
+    <H1 id="experimentName" class="editable">Enter Experiment Name</H1>
     <div style="display: flex; flex-direction: row;">
     <div id="experimentContent">
         <div><b>Aim:</b></div>
         <div id="experimentAim" class="editable" autofocus></div>
         <div><b>Body:</b></div>
         <div id="experimentBody" class="editable" autofocus></div>
-        <div><b>Conclusion:<b></div>
+        <div><b>Conclusion:</b></div>
         <div id="experimentConclusion" class="editable" autofocus></div>
     </div>
     <div id="relatedExperiments">
-        <div id="parentExperiments">Parent Experiments:</div>
-        <div id="derivedExperiments">Derived Experiments:</div>
+        <div id="parentExperiments">
+            <div><b>Follow Up experiments</b></div>
+            <div id="followUpExperimentsList"></div>
+            <div id="followUpExerimentCreator" style="display: flex; flex-direction: row;">
+                <div id="enterFollowUpExperimentName" data-raw = '' placeholder ='Create a follow up experiment' class="relatedExperimentsEditable" contenteditable="true">Create a follow up experiment</div>
+                <button id="createFollowUpExperiment" class="button">Create</button>
+            </div>
+        </div>
+        <div id="derivedExperiments"><b>Derived Experiments:</b></div>
     </div>
     </div>
 
@@ -38,8 +45,12 @@
         const editablefields = document.querySelectorAll('.editable');
         editablefields.forEach(field => {
             field.contentEditable = 'true';
-        })
+        });
 
+        const followUpCreatorInput = document.getElementById('enterFollowUpExperimentName');
+        hoverPlaceholderManagement(followUpCreatorInput)
+
+        // converts fields to latex formatting when not in focus
         editablefields.forEach(field => {
             field.addEventListener('focus', () => {
                 field.innerHTML = field.getAttribute('data-raw');
@@ -104,6 +115,7 @@
             })
         }
 
+        // loading an experiment that already exists in the database
         if(pageOperation == 'open'){
             const urlParams = new URLSearchParams(window.location.search);
             getExperimentData(urlParams.get('eId'));
@@ -127,21 +139,28 @@
                     const fieldId = field.id;
                     field.setAttribute('data-raw', responseContent[fieldId]);
                     field.innerHTML = responseContent[fieldId];
+                    // renders latex blocks inside the div 
+                    MathJax.typesetPromise([field]).catch((err)=>{console.error(err)});
                 })
             }catch(err){
                 console.error(err);
             }
         }
 
+        //managing all active functions after page load or initial save
         async function openPageMaintenance(){
-        //event listeners for saving any changes made
-                editablefields.forEach(field => {
+            //event listeners for saving any changes made
+            editablefields.forEach(field => {
                 field.addEventListener('input', saveExperimentChanges);
             })
+
+            relatedExperimentsMaintenance();
+            
         }
 
         //saving changes to editable fields
         async function saveExperimentChanges(e){
+            
             const field = e.currentTarget;
             clearTimeout(inputTimeout);
 
@@ -158,7 +177,6 @@
             
             //waits to builds a buffer of changes to be saved across different fields and sends aggregated data to the server
             inputTimeout = setTimeout(async () => {                
-                console.log('saving data to the database');
                 sendDataToBeSaved(eId)
             }, 3000)
 
@@ -189,6 +207,27 @@
             } catch(err){
                 console.error(err)
             }
+        }
+
+        async function relatedExperimentsMaintenance(){
+            const followUpCreatorButton = document.getElementById('createFollowUpExperiment')
+        }
+        
+        // manages replacing editable field with placer holder text if it is empty
+        async function hoverPlaceholderManagement(field) {
+            field.addEventListener('focus', ()=>{
+                if(field.getAttribute('data-raw') == ''){
+                    field.innerHTML = ''
+                }
+            })
+            field.addEventListener('blur', ()=>{
+                if(field.getAttribute('data-raw') == ''){
+                    field.innerHTML = field.getAttribute('placeholder');
+                }
+            })
+            field.addEventListener('input', ()=>{
+                field.setAttribute('data-raw', field.textContent);
+            })
         }
 
     </script>

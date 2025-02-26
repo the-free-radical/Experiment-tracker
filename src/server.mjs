@@ -24,7 +24,7 @@ app.get('/experiment/new', (req,res)=>{
 
 //sending experimentEdit.html (default experiment edit view)
 app.get('/experiment/open', (req,res)=>{
-    console.log(`openeing experiment no: ${req.query.eId}`)
+    console.log(`opening experiment no: ${req.query.eId}`)
     res.sendFile(path.join(publicPath, 'ExperimentEdit.html'))
 })
 
