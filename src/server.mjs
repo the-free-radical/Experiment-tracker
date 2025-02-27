@@ -65,6 +65,13 @@ app.post('/experiment/saveData', (req, res) => {
     }
 })
 
+app.post('/relatedExperiment/createFollowUp', (req, res) => {
+    const followUpExperimentInfo = req.body;
+    console.log(followUpExperimentInfo)
+    const eIdFollowUpExperiment = utils.experimentFirstSave(followUpExperimentInfo);
+    console.log(eIdFollowUpExperiment);
+})
+
 app.listen(port, ()=>{
     console.log(`Server listening at http://localhost:${port}`);
 });

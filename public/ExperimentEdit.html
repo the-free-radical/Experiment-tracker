@@ -48,6 +48,8 @@
         });
 
         const followUpCreatorInput = document.getElementById('enterFollowUpExperimentName');
+        const followUpCreatorButton = document.getElementById('createFollowUpExperiment');
+        
         hoverPlaceholderManagement(followUpCreatorInput)
 
         // converts fields to latex formatting when not in focus
@@ -153,9 +155,6 @@
             editablefields.forEach(field => {
                 field.addEventListener('input', saveExperimentChanges);
             })
-
-            relatedExperimentsMaintenance();
-            
         }
 
         //saving changes to editable fields
@@ -209,10 +208,53 @@
             }
         }
 
+        relatedExperimentsMaintenance();
+
+        // maintains functions concerned with creating and managing related experiments
         async function relatedExperimentsMaintenance(){
-            const followUpCreatorButton = document.getElementById('createFollowUpExperiment')
+            // deals with creation of a new follow up experiment
+            createFollowUpExperiment();    
         }
         
+        async function createFollowUpExperiment(){
+            
+            // manages text entered in follow up experiment creation input field
+            followUpCreatorInput.addEventListener('input', ()=>{
+                followUpCreatorInput.setAttribute('data-raw', followUpCreatorInput.textContent);
+            })
+            
+            // listens if follow up button is clicked or not
+            followUpCreatorButton.addEventListener('click', async () => {
+                if(window.location.pathname.split('/')[2] == 'new'){
+                    console.log("Enter experiment name before creating a follow up")
+                }else{
+                    if(followUpCreatorInput.getAttribute('data-raw')==''){
+                        console.log("enter follow up experiment name");
+                    }else{
+                        console.log("creating experiment", followUpCreatorInput.getAttribute('data-raw'));
+                        saveNewFollowUpExperimentInfo();
+                    }
+                    
+                }
+            })
+
+            // sends infromation to the create the follow up experiment to the server and returns the new experiment no
+            async function saveNewFollowUpExperimentInfo(){
+                urlParams = new URLSearchParams(window.location.search);
+                try{
+                    const response = await fetch(`/relatedExperiment/createFollowUp?eId=${urlParams.get('eId')}`, {
+                        method : 'post',
+                        headers : {
+                            'Content-Type' : 'application/json' 
+                        },
+                        body : JSON.stringify({modifiedField: 'experimentName', modifiedFieldContent : followUpCreatorInput.getAttribute('data-raw')})
+                    })
+                }catch(err){
+                    console.error(err)
+                }
+            }
+        }
+
         // manages replacing editable field with placer holder text if it is empty
         async function hoverPlaceholderManagement(field) {
             field.addEventListener('focus', ()=>{
@@ -224,9 +266,6 @@
                 if(field.getAttribute('data-raw') == ''){
                     field.innerHTML = field.getAttribute('placeholder');
                 }
-            })
-            field.addEventListener('input', ()=>{
-                field.setAttribute('data-raw', field.textContent);
             })
         }
 
