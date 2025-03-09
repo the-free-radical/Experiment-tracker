@@ -124,14 +124,14 @@
         // loading an experiment that already exists in the database
         if(pageOperation == 'open'){
             const urlParams = new URLSearchParams(window.location.search);
-            getExperimentData(urlParams.get('eId'));
+            fillExperimentData(urlParams.get('eId'));
             getFollowUpExperiments(urlParams.get('eId'));
             getReferences(urlParams.get('eId'));
             openPageMaintenance();
         }
 
         //getting details for experiment by eId
-        async function getExperimentData(eId){
+        async function fillExperimentData(eId){
             try{
                 const response = await fetch(`/experiment/getData?eId=${eId}`)
                 if(!response.ok){
