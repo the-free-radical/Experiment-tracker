@@ -9,26 +9,30 @@
       <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
-    <H1 id="experimentName" class="editable">Enter Experiment Name</H1>
+    <H1 id="experimentName" class="editable" data-raw="" placeholder='Enter Experiment Name'></H1>
     <div style="display: flex; flex-direction: row;">
     <div id="experimentContent">
         <div><b>Aim:</b></div>
-        <div id="experimentAim" class="editable" autofocus></div>
+        <div id="experimentAim" data-raw="" class="editable" placeholder='What is the aim?'></div>
         <div><b>Body:</b></div>
-        <div id="experimentBody" class="editable" autofocus></div>
+        <div id="experimentBody" data-raw="" class="editable" placeholder='Enter Experiment details'></div>
         <div><b>Conclusion:</b></div>
-        <div id="experimentConclusion" class="editable" autofocus></div>
+        <div id="experimentConclusion" data-raw="" class="editable" placeholder='What are the takeaways'></div>
     </div>
     <div id="relatedExperiments">
         <div id="followUpExperiments">
             <div><b>Follow Up experiments</b></div>
             <div id="followUpExperimentsList"></div>
             <div id="followUpExerimentCreator" style="display: flex; flex-direction: row;">
-                <div id="enterFollowUpExperimentName" data-raw = '' placeholder ='Create a follow up experiment' class="relatedExperimentsEditable" contenteditable="true">Create a follow up experiment</div>
+                <div id="enterFollowUpExperimentName" data-raw ="" placeholder='Create a follow up experiment' class="relatedExperimentsEditable" contenteditable="true">Create a follow up experiment</div>
                 <button id="createFollowUpExperiment" class="button">Create</button>
             </div>
         </div>
         <div id="referenceExperiments"><b>Reference Experiments</b>
+            <div id="referenceExperimentLinker" style="display: flex; flex-direction: row;">
+                <div type="text" placeholder="search existing experiments" data-raw="" id="enterReferenceName" contenteditable="true">Search reference to add</div>
+                <button id="addReferenceExperiment" class="button">Add</button>
+            </div>
             <div id="referenceExperimentsList"></div>
         </div>
     </div>
@@ -47,14 +51,19 @@
         const editablefields = document.querySelectorAll('.editable');
         editablefields.forEach(field => {
             field.contentEditable = 'true';
+            hoverPlaceholderManagement(field);
         });
 
         const followUpCreatorInput = document.getElementById('enterFollowUpExperimentName');
         const followUpCreatorButton = document.getElementById('createFollowUpExperiment');
         const followUpExperimentsList = document.getElementById('followUpExperimentsList');
         const referenceExperimentsList = document.getElementById('referenceExperimentsList')
-        
+        const referenceCreatorInput = document.getElementById('enterReferenceName')
+        const refernceCreatorButton = document.getElementById('addReferenceExperiment');        
+       
         hoverPlaceholderManagement(followUpCreatorInput)
+        hoverPlaceholderManagement(referenceCreatorInput)
+        
 
         // converts fields to latex formatting when not in focus
         editablefields.forEach(field => {
@@ -68,6 +77,9 @@
         
         // new experiment mode for a new experiment being created
         if (pageOperation == 'new'){
+            editablefields.forEach(field => {
+                field.innerHTML = field.getAttribute('placeholder')
+            })
             /* function that watches any for edits done on the new experiment, then calls the server to create new database entry for that experiment with the added content and exists new experiment mode*/
             function fieldEditListener(e) {
                 const field = e.currentTarget;
@@ -133,6 +145,28 @@
         //getting details for experiment by eId
         async function fillExperimentData(eId){
             try{
+                const responseContent = await getExperimentData(eId);
+                console.log('updating the page with received experiment details');
+                // updating each editable field with data stored in server
+                editablefields.forEach(field => {
+                    const fieldId = field.id;
+                    if(responseContent[fieldId]!==null){
+                        field.setAttribute('data-raw', responseContent[fieldId]);
+                        field.innerHTML = responseContent[fieldId];
+                    }
+                    else if(responseContent[fieldId] == null){
+                        field.innerHTML = field.getAttribute('placeholder')
+                    }
+                    // renders latex blocks inside the div 
+                    MathJax.typesetPromise([field]).catch((err)=>{console.error(err)});
+                })
+            }catch(err){
+                console.error(err);
+            }
+        }
+
+        async function getExperimentData(eId){
+            try{
                 const response = await fetch(`/experiment/getData?eId=${eId}`)
                 if(!response.ok){
                     const responseContent = await response.json();
@@ -140,17 +174,9 @@
                 }
                 console.log('getting data from server')
                 const responseContent = await response.json();
-
-                console.log('updating the page with received experiment details');
-                // updating each editable field with data stored in server
-                editablefields.forEach(field => {
-                    const fieldId = field.id;
-                    field.setAttribute('data-raw', responseContent[fieldId]);
-                    field.innerHTML = responseContent[fieldId];
-                    // renders latex blocks inside the div 
-                    MathJax.typesetPromise([field]).catch((err)=>{console.error(err)});
-                })
-            }catch(err){
+                return responseContent;
+            }
+            catch(err){
                 console.error(err);
             }
         }
@@ -365,13 +391,16 @@
 
         // manages replacing editable field with placer holder text if it is empty
         async function hoverPlaceholderManagement(field) {
+            console.log('creating hover management for', field.id)
             field.addEventListener('focus', ()=>{
                 if(field.getAttribute('data-raw') == ''){
                     field.innerHTML = ''
+                    console.log('empty')
                 }
             })
             field.addEventListener('blur', ()=>{
                 if(field.getAttribute('data-raw') == ''){
+                    console.log(field.getAttribute('placeholder'))
                     field.innerHTML = field.getAttribute('placeholder');
                 }
             })
