@@ -20,7 +20,7 @@
         <div id="experimentConclusion" class="editable" autofocus></div>
     </div>
     <div id="relatedExperiments">
-        <div id="parentExperiments">
+        <div id="followUpExperiments">
             <div><b>Follow Up experiments</b></div>
             <div id="followUpExperimentsList"></div>
             <div id="followUpExerimentCreator" style="display: flex; flex-direction: row;">
@@ -28,7 +28,9 @@
                 <button id="createFollowUpExperiment" class="button">Create</button>
             </div>
         </div>
-        <div id="derivedExperiments"><b>Derived Experiments:</b></div>
+        <div id="referenceExperiments"><b>Reference Experiments</b>
+            <div id="referenceExperimentsList"></div>
+        </div>
     </div>
     </div>
 
@@ -49,6 +51,8 @@
 
         const followUpCreatorInput = document.getElementById('enterFollowUpExperimentName');
         const followUpCreatorButton = document.getElementById('createFollowUpExperiment');
+        const followUpExperimentsList = document.getElementById('followUpExperimentsList');
+        const referenceExperimentsList = document.getElementById('referenceExperimentsList')
         
         hoverPlaceholderManagement(followUpCreatorInput)
 
@@ -116,11 +120,13 @@
                 field.addEventListener('input', fieldEditListener)
             })
         }
-
+        
         // loading an experiment that already exists in the database
         if(pageOperation == 'open'){
             const urlParams = new URLSearchParams(window.location.search);
             getExperimentData(urlParams.get('eId'));
+            getFollowUpExperiments(urlParams.get('eId'));
+            getReferences(urlParams.get('eId'));
             openPageMaintenance();
         }
 
@@ -247,11 +253,113 @@
                         headers : {
                             'Content-Type' : 'application/json' 
                         },
-                        body : JSON.stringify({modifiedField: 'experimentName', modifiedFieldContent : followUpCreatorInput.getAttribute('data-raw')})
+                        body : JSON.stringify({modifiedField: 'experimentName', modifiedFieldContent : `${followUpCreatorInput.getAttribute('data-raw')}`})
                     })
+                    if(!response.ok){
+                        const responseContent = await response.json();
+                        console.error(responseContent)
+                    };
+
+                    //recieves the eId of the new follow up experiment created and the status of creating the link as {eId: #, message: 'message'}
+                    const responseContent = await response.json();
+                    addNewFollowUpToList(responseContent.eId, followUpCreatorInput.getAttribute('data-raw'));
                 }catch(err){
                     console.error(err)
                 }
+            }     
+        }
+
+        // creates a follow up item and adds it to the list of follow up experiments
+        async function addNewFollowUpToList(eId, experimentName) {
+
+            const followUpExperimentItem = document.createElement('div');
+            const followUpExperimentLink = document.createElement('div');
+
+            const followUpExperimentLinkText = document.createElement('a');
+            followUpExperimentLinkText.href = `/experiment/open?eId=${eId}`;
+            followUpExperimentLinkText.textContent = `${experimentName}`;
+
+            const editFollowUpExperimentName = document.createElement('button');
+            editFollowUpExperimentName.textContent = 'Edit';
+
+
+            followUpExperimentLink.appendChild(followUpExperimentLinkText);
+            followUpExperimentItem.appendChild(followUpExperimentLink);
+            followUpExperimentItem.appendChild(editFollowUpExperimentName);
+            followUpExperimentsList.appendChild(followUpExperimentItem);
+            followUpCreatorInput.textContent =  followUpCreatorInput.getAttribute('placeholder');
+            followUpCreatorInput.setAttribute('data-raw', '');
+        }
+
+
+        async function getFollowUpExperiments(eId){
+            try{
+                console.log('getting follow up experiments')
+                const response = await fetch(`/relatedExperiment/getFollowUp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({eId: eId})
+                })
+                if(!response.ok){
+                    const responseContent = await response.json();
+                    console.error(responseContent)
+                };
+                const responseContent = await response.json();
+                if(responseContent!=null){
+                    console.log(responseContent)
+                    responseContent.forEach(experiment => {
+                        addNewFollowUpToList(experiment.eId, experiment.experimentName);
+                    })
+                }
+            }catch(err){
+                console.error(err)
+            }
+        }
+
+        async function addNewReferenceToList(eId, experimentName) {
+
+            const referenceExperimentItem = document.createElement('div');
+            const referenceExperimentLink = document.createElement('div');
+
+            const referenceExperimentLinkText = document.createElement('a');
+            referenceExperimentLinkText.href = `/experiment/open?eId=${eId}`;
+            referenceExperimentLinkText.textContent = `${experimentName}`;
+
+            const editReferenceExperimentName = document.createElement('button');
+            editReferenceExperimentName.textContent = 'Edit';
+
+
+            referenceExperimentLink.appendChild(referenceExperimentLinkText);
+            referenceExperimentItem.appendChild(referenceExperimentLink);
+            referenceExperimentItem.appendChild(editReferenceExperimentName);
+            referenceExperimentsList.appendChild(referenceExperimentItem);
+            }
+
+        async function getReferences(eId){
+            try{
+                console.log('getting referenced experiments')
+                const response = await fetch(`/relatedExperiment/getReferences`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({eId: eId})
+                })
+                if(!response.ok){
+                    const responseContent = await response.json();
+                    console.error(responseContent)
+                };
+                const responseContent = await response.json();
+                if(responseContent!=null){
+                    console.log(responseContent)
+                    responseContent.forEach(experiment => {
+                        addNewReferenceToList(experiment.eId, experiment.experimentName);
+                    })
+                }
+            }catch(err){
+                console.error(err)
             }
         }
 
@@ -268,6 +376,8 @@
                 }
             })
         }
+
+        
 
     </script>
 </body>

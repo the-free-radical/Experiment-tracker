@@ -61,15 +61,59 @@ app.post('/experiment/saveData', (req, res) => {
         res.json(saveStatus);
     } catch(err){
         console.error(err);
-        res.status(500).json(err.message)
+        res.status(500).json(err);
     }
 })
 
 app.post('/relatedExperiment/createFollowUp', (req, res) => {
     const followUpExperimentInfo = req.body;
-    console.log(followUpExperimentInfo)
-    const eIdFollowUpExperiment = utils.experimentFirstSave(followUpExperimentInfo);
-    console.log(eIdFollowUpExperiment);
+    try{
+        const eIdFollowUpExperiment = utils.experimentFirstSave(followUpExperimentInfo);
+        console.log(`created follow up experiment with title ${req.body.modifiedFieldContent}`);
+        const followUpLinkCreation = utils.addChildNodeLink(req.query.eId, eIdFollowUpExperiment);
+        res.json({eId: eIdFollowUpExperiment, message: followUpLinkCreation})
+    } catch(err){
+        console.error(err);
+        res.status(500).json(err)
+    }
+})
+
+app.post('/relatedExperiment/getFollowUp', (req,res) => {
+    const requestInfo = req.body;
+    let followUpList = [];
+    try{
+        console.log('getting followUp experiments for experiment ', requestInfo.eId )
+        const followUpInfo = utils.getChildNodes(requestInfo.eId)
+        console.log(followUpInfo)
+        if(followUpInfo!= null){
+            followUpInfo.forEach(followUp => {
+                const experimentInfo = utils.getExperimentDataById(followUp.childNode);
+                followUpList.push({eId: experimentInfo.eId, experimentName: experimentInfo.experimentName});
+            });
+            res.json(followUpList);
+        }else if(followUpInfo==null)
+            res.json(null)
+    }catch(err){
+        res.status(500).json(err)
+    }
+})
+
+app.post('/relatedExperiment/getReferences', (req,res) => {
+    let referenceList = [];
+    try{
+        console.log('getting referenced experiments for experiment', req.body.eId);
+        const references = utils.getReferences(req.body.eId)
+        if(references!=null){
+            references.forEach(reference => {
+                const experimentInfo = utils.getExperimentDataById(reference.eId)
+                referenceList.push({eId: experimentInfo.eId, experimentName: experimentInfo.experimentName});
+            })
+            res.json(referenceList);
+        }else if(references==null)
+            res.json(null)
+    } catch(err){
+        res.status(500).json(err)
+    }
 })
 
 app.listen(port, ()=>{

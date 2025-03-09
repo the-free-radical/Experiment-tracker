@@ -19,6 +19,7 @@ db.exec(`CREATE TABLE IF NOT EXISTS mainTable (
 
 export function experimentFirstSave(modifiedInfo){
     try{
+        console.log(modifiedInfo)
         const insert = db.prepare(`INSERT INTO mainTable (${modifiedInfo.modifiedField}) VALUES (?)`);
         const result = insert.run(modifiedInfo.modifiedFieldContent);
         if (result.changes > 0){
@@ -60,4 +61,43 @@ export function saveExperimentDataById(eId, modifiedInfo){
         console.log(err)
         throw new Error(err)
     }
+}
+
+export function addChildNodeLink(eId, childEId){
+    try{
+        const addChild = db.prepare(`INSERT INTO relations (eId, childNode) VALUES (?,?)`)
+        const result = addChild.run(eId, childEId);
+        if(result.changes >0){
+            return `added as a follow up to exp no: ${eId}`
+        }
+    } catch(err){
+        throw new Error(err)
+    }
+}
+
+export function getChildNodes(eId){
+    try{   
+        const select = db.prepare(`SELECT * FROM relations WHERE eId = ?`);
+        const followUp = select.all(eId)
+        if(followUp!=null){
+            return followUp
+        }else{
+            return null;
+        }   
+    }catch(err){
+        throw new Error(err)
+    }  
+}
+
+export function getReferences(eId){
+    try{const select = db.prepare(`SELECT * FROM relations WHERE childNode = ?`);
+        const reference = select.all(eId)
+        if(reference!=null){
+            return reference;
+        }else{
+            return null;
+        }   
+    }catch(err){
+        throw new Error(err)
+    }  
 }
