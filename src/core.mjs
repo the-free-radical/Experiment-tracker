@@ -17,6 +17,17 @@ db.exec(`CREATE TABLE IF NOT EXISTS mainTable (
     FOREIGN KEY (eId) REFERENCES mainTable(eId))
 `);
 
+db.function('REGEXP', { deterministic: true }, (regex, string) => {
+    try {
+      const re = new RegExp(regex); // Create a JavaScript RegExp object
+      return re.test(string) ? 1 : 0; // Return 1 for match, 0 for no match
+    } catch (e) {
+      // Handle invalid regex patterns (important!)
+      console.error("Invalid regex:", regex, e);
+      return 0; // Or throw an error if you prefer
+    }
+  });
+
 export function experimentFirstSave(modifiedInfo){
     try{
         console.log(modifiedInfo)
@@ -100,4 +111,21 @@ export function getReferences(eId){
     }catch(err){
         throw new Error(err)
     }  
+}
+
+export function searchExperiment(column, string){
+    try{
+        console.log(column, string)
+        const search = db.prepare(`SELECT * FROM mainTable WHERE ${column} REGEXP ?`);
+        const results = search.all(string)
+        if(results!=null){
+            console.log(results)
+            return results;
+        }else{
+            console.log('no results')
+            return null;
+        }
+    } catch(err){
+        throw new Error(err)
+    }
 }

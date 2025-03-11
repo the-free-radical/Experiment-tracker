@@ -51,7 +51,6 @@
         const editablefields = document.querySelectorAll('.editable');
         editablefields.forEach(field => {
             field.contentEditable = 'true';
-            hoverPlaceholderManagement(field);
         });
 
         const followUpCreatorInput = document.getElementById('enterFollowUpExperimentName');
@@ -246,6 +245,7 @@
         async function relatedExperimentsMaintenance(){
             // deals with creation of a new follow up experiment
             createFollowUpExperiment();    
+            searchReferences();
         }
         
         async function createFollowUpExperiment(){
@@ -385,6 +385,37 @@
                     })
                 }
             }catch(err){
+                console.error(err)
+            }
+        }
+
+        async function searchReferences(){
+            referenceCreatorInput.addEventListener('input',() => {
+                referenceCreatorInput.setAttribute('data-raw', referenceCreatorInput.textContent);
+                const searchByName = {field: 'experimentName', content: referenceCreatorInput.textContent}
+                searchExperiments(searchByName)
+            })
+        }
+
+        async function searchExperiments(search){
+            try{
+                console.log('searching referenced experiments')
+                const response = await fetch(`/experiment/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(search)
+                })
+                if(!response.ok){
+                    const responseContent = await response.json();
+                    console.error(responseContent)
+                };
+                const responseContent = await response.json();
+                if(responseContent!=null){
+                    console.log(responseContent)
+                }
+            } catch(err){
                 console.error(err)
             }
         }

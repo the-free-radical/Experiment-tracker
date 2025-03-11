@@ -65,6 +65,18 @@ app.post('/experiment/saveData', (req, res) => {
     }
 })
 
+app.post('/experiment/search', (req, res) => {
+    try{
+        const search = req.body;
+        console.log(search)
+        const matches = utils.searchExperiment(search.field, search.content);
+        console.log(matches)
+        res.json(matches);
+    }catch(err){
+        res.status(500).json(err);
+    }
+})
+
 app.post('/relatedExperiment/createFollowUp', (req, res) => {
     const followUpExperimentInfo = req.body;
     try{
@@ -115,6 +127,8 @@ app.post('/relatedExperiment/getReferences', (req,res) => {
         res.status(500).json(err)
     }
 })
+
+
 
 app.listen(port, ()=>{
     console.log(`Server listening at http://localhost:${port}`);
