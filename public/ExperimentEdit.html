@@ -9,15 +9,15 @@
       <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
-    <H1 id="experimentName" class="editable" data-raw="" placeholder='Enter Experiment Name'></H1>
+    <H1 id="experimentName" class="experimentDetailsEditable" data-raw="" placeholder='Enter Experiment Name'></H1>
     <div style="display: flex; flex-direction: row;">
     <div id="experimentContent">
         <div><b>Aim:</b></div>
-        <div id="experimentAim" data-raw="" class="editable" placeholder='What is the aim?'></div>
+        <div id="experimentAim" data-raw="" class="experimentDetailsEditable" placeholder='What is the aim?'></div>
         <div><b>Body:</b></div>
-        <div id="experimentBody" data-raw="" class="editable" placeholder='Enter Experiment details'></div>
+        <div id="experimentBody" data-raw="" class="experimentDetailsEditable" placeholder='Enter Experiment details'></div>
         <div><b>Conclusion:</b></div>
-        <div id="experimentConclusion" data-raw="" class="editable" placeholder='What are the takeaways'></div>
+        <div id="experimentConclusion" data-raw="" class="experimentDetailsEditable" placeholder='What are the takeaways'></div>
     </div>
     <div id="relatedExperiments">
         <div id="followUpExperiments">
@@ -45,21 +45,34 @@
         //timeout variable to help create a buffer when saving changes to editable fields
         let inputTimeout;
         let modifiedFieldsArray = [];
+        let saveStatus = 'saved';
 
 
-        // setting fields that can be edited to be editable
-        const editablefields = document.querySelectorAll('.editable');
+        // setting fields related to experiment body that can be edited to be editable
+        const editablefields = document.querySelectorAll('.experimentDetailsEditable');
         editablefields.forEach(field => {
             field.contentEditable = 'true';
         });
 
+        // follow up initiation
         const followUpCreatorInput = document.getElementById('enterFollowUpExperimentName');
         const followUpCreatorButton = document.getElementById('createFollowUpExperiment');
         const followUpExperimentsList = document.getElementById('followUpExperimentsList');
+
+        //reference initiation
         const referenceExperimentsList = document.getElementById('referenceExperimentsList')
         const referenceCreatorInput = document.getElementById('enterReferenceName')
         const refernceCreatorButton = document.getElementById('addReferenceExperiment');        
        
+        hoverPlaceholderManagement(followUpCreatorInput)
+        hoverPlaceholderManagement(referenceCreatorInput)
+        
+
+        
+  
+        
+        //Loading the page
+
         hoverPlaceholderManagement(followUpCreatorInput)
         hoverPlaceholderManagement(referenceCreatorInput)
         
@@ -124,7 +137,7 @@
                         }catch(err){
                             console.error(err);
                         }
-                },3000);
+                },500);
             };
             //creates event listeners to all editable fields
             editablefields.forEach(field => {
@@ -188,7 +201,7 @@
             })
         }
 
-        //saving changes to editable fields
+        //auto saving changes to editable fields
         async function saveExperimentChanges(e){
             
             const field = e.currentTarget;
@@ -214,29 +227,34 @@
 
         // sends all changes to the server to be saved
         async function sendDataToBeSaved(eId){
-            let modifiedData = [];    
-            modifiedFieldsArray.forEach(arrayElement => {
-                modifiedData.push({modifiedField: arrayElement.id, modifiedFieldContent: arrayElement.getAttribute('data-raw')})
-            })
+            if(modifiedFieldsArray.length != 0){
 
-            try{
-                const response = await fetch(`/experiment/saveData?eId=${eId}`, {
-                    method: 'post',
-                    headers:{
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(modifiedData)
+                console.log('non-zero changes since last save')
+                let modifiedData = [];    
+
+                modifiedFieldsArray.forEach(arrayElement => {
+                    modifiedData.push({modifiedField: arrayElement.id, modifiedFieldContent: arrayElement.getAttribute('data-raw')})
                 })
-                if(!response.ok){
+
+                try{
+                    const response = await fetch(`/experiment/saveData?eId=${eId}`, {
+                        method: 'post',
+                        headers:{
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(modifiedData)
+                    })
+                    if(!response.ok){
+                        const responseContent = await response.json();
+                        console.error(responseContent)
+                    }
                     const responseContent = await response.json();
-                    console.error(responseContent)
+                    console.log(responseContent.message);
+                    modifiedFieldsArray = [];
+                } catch(err){
+                    console.error(err)
                 }
-                const responseContent = await response.json();
-                console.log(responseContent.message);
-                modifiedFieldsArray = [];
-            } catch(err){
-                console.error(err)
-            }
+            }    
         }
 
         relatedExperimentsMaintenance();
@@ -437,7 +455,45 @@
             })
         }
 
-        
+        /* converts fields to latex formatting when not in focus
+        editablefields.forEach(field => {
+            field.addEventListener('focus', () => {
+                field.innerHTML = field.getAttribute('data-raw');
+            })
+            field.addEventListener('blur', () => {
+                MathJax.typesetPromise([field]).catch((err)=>{console.error(err)});
+            })
+        })*/
+
+        editablefields.forEach(field => {
+            inputFormatter(field);
+        })
+
+        async function inputFormatter(field){ 
+            field.addEventListener('focus', ()=>{
+                if(field.getAttribute('data-raw') == ''){
+                    field.innerHTML = ''
+                    console.log('empty')
+                }
+                else{
+                    field.innerHTML = field.getAttribute('data-raw');
+                } this.focus();
+            })
+
+            field.addEventListener('blur', (event)=>{
+                if(field.getAttribute('data-raw') == ''){
+                    console.log(field.getAttribute('placeholder'))
+                    field.innerHTML = field.getAttribute('placeholder');
+                } else {
+                    if(window.location.pathname.split('/')[2] != 'new'){
+                        clearTimeout(inputTimeout);
+                        const urlParams = new URLSearchParams(window.location.search) 
+                        sendDataToBeSaved(urlParams.get('eId'));
+                    }
+                    MathJax.typesetPromise([field]).catch((err)=>{console.error(err)});
+                }
+            })       
+        }
 
     </script>
 </body>
