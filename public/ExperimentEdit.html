@@ -12,7 +12,7 @@
         #experimentPageMainGrid{
             display: grid;
             grid-auto-flow: column;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 63% 30%;
             grid-template-rows: 1fr;
         }
 
@@ -35,6 +35,29 @@
             max-height: 90%; /* Constrains to grid cell height */
             word-wrap: break-word; /* Ensures text wraps properly */
         }
+
+        .relatedExperimentsContainer{
+            display: grid;
+            overflow-y: auto;
+            grid-template-rows: 1rem 45vh 45vh;
+            grid-template-columns: 90%;
+        }
+
+        #followUpExperiments{
+            display: grid;
+            grid-template-rows: 1rem 1rem auto;
+        }
+
+        #referenceExperiments{
+            display: grid;
+            grid-template-rows: 1em 1em auto;
+        }
+        .relatedExperimentInput{
+            display: grid;
+            grid-template-columns: auto min-content;
+        }
+
+
 
       </style>
 </head>
@@ -63,18 +86,19 @@
             </div>  
         </div>
         
-        <div id="relatedExperiments">
+        <div id="relatedExperiments" class="relatedExperimentsContainer">
+            <div><b><u>Related Experiments</u></b></div>
             <div id="followUpExperiments">
                 <div><b>Follow Up experiments</b></div>
-                <div id="followUpExperimentsList"></div>
-                <div id="followUpExerimentCreator" style="display: flex; flex-direction: row;">
-                    <div id="enterFollowUpExperimentName" data-raw ="" placeholder='Create a follow up experiment' class="relatedExperimentsEditable" contenteditable="true">Create a follow up experiment</div>
+                <div id="followUpExerimentCreator" class="relatedExperimentInput">
+                    <div id="enterFollowUpExperimentName" data-raw =""placeholder='Create a follow up experiment' class="relatedExperimentsEditable" contenteditable="true">Create a follow up experiment</div>
                     <button id="createFollowUpExperiment" class="button">Create</button>
                 </div>
+                <div id="followUpExperimentsList"></div>
             </div>
             <div id="referenceExperiments"><b>Reference Experiments</b>
-                <div id="referenceExperimentLinker" style="display: flex; flex-direction: row;">
-                    <div type="text" placeholder="search existing experiments" data-raw="" id="enterReferenceName" contenteditable="true">Search reference to add</div>
+                <div id="referenceExperimentLinker" class="relatedExperimentInput">
+                    <div type="text" placeholder="search existing experiments" data-raw="" id="enterReferenceName" class="relatedExperimentsEditable" contenteditable="true">Search reference to add</div>
                     <button id="addReferenceExperiment" class="button">Add</button>
                 </div>
                 <div id="referenceExperimentsList"></div>
@@ -140,7 +164,7 @@
             function fieldEditListener(e) {
                 const field = e.currentTarget;
                 clearTimeout(inputTimeout);
-                field.setAttribute('data-raw', field.textContent);
+                field.setAttribute('data-raw', field.innerHTML);
 
                 // tracks the fields where changes have been made
                 if(!modifiedFieldsArray.includes(field)){
@@ -155,7 +179,7 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({modifiedField: field.id, modifiedFieldContent: field.textContent})
+                            body: JSON.stringify({modifiedField: field.id, modifiedFieldContent: field.innerHTML})
                         })
                         // dealing with response: changes the url to /experiment/eId and close all event listeners created inside this if statement
                         try{
@@ -260,7 +284,7 @@
             }
 
             // saves the new text content to the attribute for latex handling
-            field.setAttribute('data-raw', field.textContent);
+            field.setAttribute('data-raw', field.innerHTML);
             
             //waits to builds a buffer of changes to be saved across different fields and sends aggregated data to the server
             inputTimeout = setTimeout(async () => {                
@@ -513,8 +537,8 @@
             inputFormatter(field);
         })
 
-        async function inputFormatter(field){ 
-            field.addEventListener('focus', ()=>{
+        async function inputFormatter(field){
+            const editmode = function(event){
                 if(field.getAttribute('data-raw') == ''){
                     field.innerHTML = ''
                     console.log('empty')
@@ -522,10 +546,19 @@
                 else{
                     field.innerHTML = field.getAttribute('data-raw');
                 } this.focus();
-            })
+                this.classList.add('active');
 
-            field.addEventListener('blur', (event)=>{
-                if(field.getAttribute('data-raw') == ''){
+                // Event-specific logic
+                if (event.type === 'focus') {
+                    this.dataset.focusState = 'active';
+                } else if (event.type === 'mouseenter') {
+                    this.dataset.hoverState = 'active';
+                }
+            }
+
+
+            const saveAndFormatting = function(event){
+                if(field.getAttribute('data-raw') == ''||field.getAttribute('data-raw')=='<br>'){
                     console.log(field.getAttribute('placeholder'))
                     field.innerHTML = field.getAttribute('placeholder');
                 } else {
@@ -533,10 +566,26 @@
                         clearTimeout(inputTimeout);
                         const urlParams = new URLSearchParams(window.location.search) 
                         sendDataToBeSaved(urlParams.get('eId'));
+                        MathJax.typesetPromise([field]).catch((err)=>{console.error(err)});
                     }
-                    MathJax.typesetPromise([field]).catch((err)=>{console.error(err)});
                 }
-            })       
+
+                //removing shared logic
+                this.classList.remove('active');
+    
+                // Event-specific logic 
+                if (event.type === 'blur') {
+                    this.dataset.focusState = 'inactive';
+                } else if (event.type === 'mouseleave') {
+                    this.dataset.hoverState = 'inactive';
+                }
+            }
+            field.addEventListener('focus', editmode);
+            field.addEventListener('mouseenter', editmode)
+
+            field.addEventListener('blur', saveAndFormatting);
+            field.addEventListener('mouseleave', saveAndFormatting)
+                 
         }
 
     </script>
