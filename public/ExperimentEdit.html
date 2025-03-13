@@ -7,35 +7,79 @@
         };
       </script>
       <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+      <style>
+
+        #experimentPageMainGrid{
+            display: grid;
+            grid-auto-flow: column;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: 1fr;
+        }
+
+        #experimentContent{
+            display: grid;
+            overflow-y: auto;
+            grid-template-rows: 20vh 50vh 30vh;
+            grid-template-columns: 90%;
+
+        }
+
+        .editableUnitWrapperDivs{
+            display: grid;
+            grid-template-rows: 1.5em auto ;
+            min-height: 3em;    
+        }
+
+        .experimentDetailsEditable{
+            overflow-y: auto; /* Enables vertical scrolling */
+            max-height: 90%; /* Constrains to grid cell height */
+            word-wrap: break-word; /* Ensures text wraps properly */
+        }
+
+      </style>
 </head>
 <body>
-    <H1 id="experimentName" class="experimentDetailsEditable" data-raw="" placeholder='Enter Experiment Name'></H1>
-    <div style="display: flex; flex-direction: row;">
-    <div id="experimentContent">
-        <div><b>Aim:</b></div>
-        <div id="experimentAim" data-raw="" class="experimentDetailsEditable" placeholder='What is the aim?'></div>
-        <div><b>Body:</b></div>
-        <div id="experimentBody" data-raw="" class="experimentDetailsEditable" placeholder='Enter Experiment details'></div>
-        <div><b>Conclusion:</b></div>
-        <div id="experimentConclusion" data-raw="" class="experimentDetailsEditable" placeholder='What are the takeaways'></div>
+    <div>
+        <a href="/experiment/new">New experiment</a>
     </div>
-    <div id="relatedExperiments">
-        <div id="followUpExperiments">
-            <div><b>Follow Up experiments</b></div>
-            <div id="followUpExperimentsList"></div>
-            <div id="followUpExerimentCreator" style="display: flex; flex-direction: row;">
-                <div id="enterFollowUpExperimentName" data-raw ="" placeholder='Create a follow up experiment' class="relatedExperimentsEditable" contenteditable="true">Create a follow up experiment</div>
-                <button id="createFollowUpExperiment" class="button">Create</button>
+
+    <div id="experimentHeadingContainer">
+        <H1 id="experimentName" class="experimentDetailsEditable" data-raw="" placeholder='Enter Experiment Name'></H1>
+    </div>
+    
+    <div id="experimentPageMainGrid">
+        <div id="experimentContent">
+            <div class="editableUnitWrapperDivs">
+                <div class="editableUnitHeadings"><b>Aim:</b></div>
+                <div id="experimentAim" data-raw="" class="experimentDetailsEditable" placeholder='What is the aim?'></div>
+            </div>
+            <div class="editableUnitWrapperDivs">
+                <div><b>Body:</b></div>
+                <div id="experimentBody" data-raw="" class="experimentDetailsEditable" placeholder='Enter Experiment details'></div>
+            </div>
+            <div class="editableUnitWrapperDivs">
+                <div><b>Conclusion:</b></div>
+                <div id="experimentConclusion" data-raw="" class="experimentDetailsEditable" placeholder='What are the takeaways'></div>
+            </div>  
+        </div>
+        
+        <div id="relatedExperiments">
+            <div id="followUpExperiments">
+                <div><b>Follow Up experiments</b></div>
+                <div id="followUpExperimentsList"></div>
+                <div id="followUpExerimentCreator" style="display: flex; flex-direction: row;">
+                    <div id="enterFollowUpExperimentName" data-raw ="" placeholder='Create a follow up experiment' class="relatedExperimentsEditable" contenteditable="true">Create a follow up experiment</div>
+                    <button id="createFollowUpExperiment" class="button">Create</button>
+                </div>
+            </div>
+            <div id="referenceExperiments"><b>Reference Experiments</b>
+                <div id="referenceExperimentLinker" style="display: flex; flex-direction: row;">
+                    <div type="text" placeholder="search existing experiments" data-raw="" id="enterReferenceName" contenteditable="true">Search reference to add</div>
+                    <button id="addReferenceExperiment" class="button">Add</button>
+                </div>
+                <div id="referenceExperimentsList"></div>
             </div>
         </div>
-        <div id="referenceExperiments"><b>Reference Experiments</b>
-            <div id="referenceExperimentLinker" style="display: flex; flex-direction: row;">
-                <div type="text" placeholder="search existing experiments" data-raw="" id="enterReferenceName" contenteditable="true">Search reference to add</div>
-                <button id="addReferenceExperiment" class="button">Add</button>
-            </div>
-            <div id="referenceExperimentsList"></div>
-        </div>
-    </div>
     </div>
 
     <script>
