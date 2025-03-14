@@ -8,26 +8,31 @@
       </script>
       <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
       <style>
+        body{
+            background-color: aliceblue;
+        }
 
         #experimentPageMainGrid{
             display: grid;
             grid-auto-flow: column;
-            grid-template-columns: 63% 30%;
+            justify-content: space-between;
+            grid-template-columns: 74.5% 25%;
             grid-template-rows: 1fr;
         }
 
         #experimentContent{
             display: grid;
             overflow-y: auto;
-            grid-template-rows: 20vh 50vh 30vh;
-            grid-template-columns: 90%;
-
+            grid-template-rows: 19% 50% 29%;
+            align-content: space-between;
+            grid-template-columns: 100%;
         }
 
         .editableUnitWrapperDivs{
             display: grid;
             grid-template-rows: 1.5em auto ;
-            min-height: 3em;    
+            min-height: 3em;   
+            background-color: pink;
         }
 
         .experimentDetailsEditable{
@@ -41,6 +46,7 @@
             overflow-y: auto;
             grid-template-rows: 1rem 45vh 45vh;
             grid-template-columns: 90%;
+            background-color: antiquewhite;
         }
 
         #followUpExperiments{
@@ -62,12 +68,13 @@
       </style>
 </head>
 <body>
-    <div>
+    <div style="display: grid; grid-auto-flow:column; background-color: aqua;">
         <a href="/experiment/new">New experiment</a>
+        <a href="/tableOfContents">Table of contents</a>
     </div>
 
     <div id="experimentHeadingContainer">
-        <H1 id="experimentName" class="experimentDetailsEditable" data-raw="" placeholder='Enter Experiment Name'></H1>
+        <H1 id="experimentName" class="experimentDetailsEditable" data-raw="" placeholder='Enter Experiment Name' style="background-color: aquamarine;"></H1>
     </div>
     
     <div id="experimentPageMainGrid">

@@ -129,3 +129,25 @@ export function searchExperiment(column, string){
         throw new Error(err)
     }
 }
+
+export function getMaxCount(){
+    try{
+        const select = db.prepare(`SELECT eId FROM mainTable ORDER BY eId DESC LIMIT 1`)
+        const count = select.get();
+        console.log(count)
+        return count
+    } catch(err){
+        throw new Error(err)
+    }
+}
+
+export function getExperimentsInRange(lowerBound, upperBound){
+    try{
+        const select = db.prepare(`SELECT eId, experimentName FROM mainTable WHERE eId < ? AND eId > ?`)
+        const results =  select.all(upperBound,lowerBound)
+        console.log(results);
+        return results;
+    } catch(err){
+        throw new Error(err)
+    }
+}

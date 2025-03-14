@@ -128,6 +128,22 @@ app.post('/relatedExperiment/getReferences', (req,res) => {
     }
 })
 
+app.get('/tableOfContents', (req,res)=>{
+    res.sendFile(path.join(publicPath, 'TableOfContents.html'))
+})
+
+app.get('/tableOfContents/getMaxCount', (req,res) => {
+    const maxCount = utils.getMaxCount();
+    res.json(maxCount)
+})
+
+app.get('/tableOfContents/getExperimentsInPage', (req,res) => {
+    const lowerBound = req.query.lowerBound
+    const upperBound = req.query.upperBound
+    const experiments = utils.getExperimentsInRange(lowerBound,upperBound)
+    res.json(experiments)
+})
+
 
 
 app.listen(port, ()=>{
