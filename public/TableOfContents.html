@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<head>
+    <script>
+        window.MathJax = {
+          tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+          svg: { fontCache: 'global' }
+        };
+      </script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+      <style>
+        #tableOfContents{
+            display: grid;
+        }
+        .tableRow{
+            display: grid;
+            grid-auto-flow: column;
+            grid-template-columns: 10vw 80vw;
+        }
+        .nameColumn{
+            overflow-x: auto; /* Enables vertical scrolling */
+            max-width: 100%
+        }
+
+        .unpressable{
+            pointer-events: none;
+            opacity: 0.5;
+        }
+      </style>
+</head>
+<body>
+    <div style="display: grid; grid-auto-flow:column;background-color: aqua;">
+        <a href="/experiment/new">New experiment</a>
+        <a href="/tableOfContents">Table of contents</a>
+    </div>
+    <h1><b>Table of contents</b></h1>
+    <div id="tableOfContents">
+        <div id="pagesNavigation">
+            <button id="pagePrevious" class="unpressable"><</button>
+            <span id="pageNumber"></span>
+            <button id="pageNext" class="pressable">></button>
+        </div>
+        <div id="pagesTable">
+            <div id="tableHeaders" class="tableRow">
+                <div>Experiment No</div>
+                <div class="nameColumn">Experiment Name</div>
+            </div>
+            <div id = 'pagesContent'></div>
+        </div>
+    </div>
+    <script>
+
+        const pageSize = 5;
+        let totalPagesCount = 1;
+        let pageNumber = 1;
+
+        const pageNumberSpan = document.getElementById('pageNumber')
+        const pageListTable = document.getElementById('pagesContent')
+        const pageNext = document.getElementById('pageNext')
+        const pagePrevious = document.getElementById('pagePrevious')
+        pageNumberSpan.innerText = pageNumber
+
+        loadPage();
+        pageTurn();
+
+        async function loadPage(){
+            try{
+                const maxCount = await getMaxCount();
+                if(maxCount == 0 || maxCount == undefined){
+                    const experimentRow = document.createElement('div')
+                    experimentRow.className = 'tableRow'
+
+                    const eIdDiv = document.createElement('div');
+                    eIdDiv.innerText = 1
+
+                    const nameDiv = document.createElement('div')
+                    const namelink = document.createElement('a')
+                    namelink.href = `/experiment/new`;
+                    namelink.innerText = 'click to add new experiment';
+                    nameDiv.appendChild(namelink);
+                    experimentRow.appendChild(eIdDiv);
+                    experimentRow.appendChild(nameDiv);
+                    pageListTable.appendChild(experimentRow)
+                    pageNext.classList.remove('pressable')
+                    pageNext.classList.add('unpressable')
+                    pagePrevious.classList.add('unpressable')
+                }
+                else if(totalPagesCount==1)
+                {
+                    pageNext.classList.remove('pressable')
+                    pageNext.classList.add('unpressable')
+                    pagePrevious.classList.add('unpressable')
+                    loadPagelist();
+                }
+                else {
+                    loadPagelist();
+                }
+            } catch (err){
+                console.error(err)
+            }
+            
+        }
+        
+        async function pageTurn(){
+            pagePrevious.addEventListener('click', () => {
+                if(pageNumber >= 2){
+                    pageNumber = pageNumber-1;
+                    pageNumberSpan.innerText = pageNumber
+                    if(pageNumber == 1){
+                        pagePrevious.classList.remove('pressable')
+                        pagePrevious.classList.add('unpressable')
+                    }
+                    if(pageNumber == (totalPagesCount-1)){
+                        pageNext.classList.remove('unpressable')
+                        pageNext.classList.add('pressable')
+                    }
+                    pageListTable.innerHTML = ''
+                    loadPagelist();
+                }
+            })
+            pageNext.addEventListener('click', () => {
+                if(pageNumber < totalPagesCount){
+                    pageNumber = pageNumber+1;
+                    pageNumberSpan.innerText = pageNumber;
+                    if(pageNumber == 2){
+                        pagePrevious.classList.remove('unpressable')
+                        pagePrevious.classList.add('pressable')
+                    }
+                    if(pageNumber == totalPagesCount){
+                        pageNext.classList.remove('pressable')
+                        pageNext.classList.add('unpressable')
+                    }
+                    pageListTable.innerHTML = ''
+                    loadPagelist();
+                }
+            })
+        }
+
+        async function getMaxCount(){
+            try{
+                const response = await fetch('tableOfContents/getMaxCount')
+                if(!response.ok){
+                    const responseContent = await response.json();
+                    console.error(responseContent)
+                }
+                const responseContent = await response.json();
+                totalPagesCount = Math.ceil(responseContent.eId/pageSize)
+                console.log('total pages count:', totalPagesCount);
+                return responseContent.eId;
+            }catch(err){
+                console.error(err)
+            }
+        }
+
+        async function loadPagelist(){
+            try{
+                const experimentListInPage = await getExperimentsInPage()
+                experimentListInPage.forEach(experiment => {
+
+                    const experimentRow = document.createElement('div')
+                    experimentRow.className = 'tableRow'
+
+                    const eIdDiv = document.createElement('div');
+                    eIdDiv.innerText = experiment.eId
+
+                    const nameDiv = document.createElement('div')
+                    const namelink = document.createElement('a')
+                    namelink.href = `/experiment/open?eId=${experiment.eId}`;
+                    if(experiment.experimentName==null){
+                        namelink.innerText = 'unnamed experiment';
+                    } else {
+                        namelink.innerText = experiment.experimentName;
+                    }
+                    nameDiv.appendChild(namelink);
+                    experimentRow.appendChild(eIdDiv);
+                    experimentRow.appendChild(nameDiv);
+                    pageListTable.appendChild(experimentRow);
+
+                });
+            }catch(err){
+                console.error(err)
+            }
+        }
+
+        async function getExperimentsInPage(){
+            const lowerBoundId = (pageNumber-1)*pageSize;
+            const upperBoundId = lowerBoundId + pageSize + 1;
+            console.log('loading experiments ', lowerBoundId + 1, ' to ', upperBoundId - 1)
+            try{
+                const response = await fetch(`/tableOfContents/getExperimentsInPage?lowerBound=${lowerBoundId}&upperBound=${upperBoundId}`)
+                if(!response.ok){
+                    const responseContent = await response.json();
+                    console.error(responseContent)
+                }
+                const responseContent = await response.json();
+                console.log('experiments info:', responseContent)
+                return responseContent
+            } catch(err){
+                console.error(err)
+            } 
+        }   
+        
+        
+        </script>
+</body>
