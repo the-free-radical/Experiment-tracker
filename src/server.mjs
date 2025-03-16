@@ -128,6 +128,12 @@ app.post('/relatedExperiment/getReferences', (req,res) => {
     }
 })
 
+app.get('/relatedExperiment/addReference', (req,res) => {
+    const followUpLinkCreation = utils.addChildNodeLink(req.query.referenceId, req.query.eId);
+    res.json({message: followUpLinkCreation})
+})
+
+
 app.get('/tableOfContents', (req,res)=>{
     res.sendFile(path.join(publicPath, 'TableOfContents.html'))
 })

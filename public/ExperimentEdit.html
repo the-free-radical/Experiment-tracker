@@ -56,11 +56,40 @@
 
         #referenceExperiments{
             display: grid;
-            grid-template-rows: 1em 1em auto;
+            position: relative;
+            grid-template-rows: 1em min-content auto;
+
         }
         .relatedExperimentInput{
             display: grid;
-            grid-template-columns: auto min-content;
+            grid-template-columns: 1fr min-content;
+        }
+
+        .dropdown{
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropDownList{
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 100%;
+            max-width: 100%;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .showDropDown{
+            display: grid;
+            overflow: auto;
+            max-height: 10re;
+            background-color: aliceblue;
+            border-color: black;
+            border-style: solid;
+        }
+        .dropDownList a:hover{
+            background-color: grey;
         }
 
 
@@ -103,10 +132,14 @@
                 </div>
                 <div id="followUpExperimentsList"></div>
             </div>
-            <div id="referenceExperiments"><b>Reference Experiments</b>
-                <div id="referenceExperimentLinker" class="relatedExperimentInput">
-                    <div type="text" placeholder="search existing experiments" data-raw="" id="enterReferenceName" class="relatedExperimentsEditable" contenteditable="true">Search reference to add</div>
-                    <button id="addReferenceExperiment" class="button">Add</button>
+            <div id="referenceExperiments">
+                <b>Reference Experiments</b>
+                <div id="referenceExperimentLinker" class="dropdown">
+                    <div class="relatedExperimentInput">
+                        <div type="text" placeholder="search existing experiments" data-raw="" id="enterReferenceName" class="relatedExperimentsEditable" contenteditable="true">Search reference to add</div>
+                        <button id="addReferenceExperiment" class="button">Add</button>
+                    </div>
+                    <div id="referenceExperimentsDropdown" class="dropDownList"></div>
                 </div>
                 <div id="referenceExperimentsList"></div>
             </div>
@@ -135,12 +168,13 @@
         const followUpExperimentsList = document.getElementById('followUpExperimentsList');
 
         //reference initiation
+        const referenceSection = document.getElementById('referenceExperiments')
         const referenceExperimentsList = document.getElementById('referenceExperimentsList')
         const referenceCreatorInput = document.getElementById('enterReferenceName')
-        const refernceCreatorButton = document.getElementById('addReferenceExperiment');        
+        const refernceCreatorButton = document.getElementById('addReferenceExperiment');   
+        const referenceDropDown = document.getElementById('referenceExperimentsDropdown')     
        
         hoverPlaceholderManagement(followUpCreatorInput)
-        hoverPlaceholderManagement(referenceCreatorInput)
         
 
         
@@ -149,7 +183,6 @@
         //Loading the page
 
         hoverPlaceholderManagement(followUpCreatorInput)
-        hoverPlaceholderManagement(referenceCreatorInput)
         
 
         // converts fields to latex formatting when not in focus
@@ -426,8 +459,7 @@
                     console.error(responseContent)
                 };
                 const responseContent = await response.json();
-                if(responseContent!=null){
-                    console.log(responseContent)
+                if(responseContent!=null&&responseContent.length!=0){
                     responseContent.forEach(experiment => {
                         addNewFollowUpToList(experiment.eId, experiment.experimentName);
                     })
@@ -471,7 +503,7 @@
                     console.error(responseContent)
                 };
                 const responseContent = await response.json();
-                if(responseContent!=null){
+                if(responseContent!=null&&responseContent.length!=0){
                     console.log(responseContent)
                     responseContent.forEach(experiment => {
                         addNewReferenceToList(experiment.eId, experiment.experimentName);
@@ -483,11 +515,109 @@
         }
 
         async function searchReferences(){
-            referenceCreatorInput.addEventListener('input',() => {
+            referenceCreatorInput.addEventListener('input', async () => {
                 referenceCreatorInput.setAttribute('data-raw', referenceCreatorInput.textContent);
                 const searchByName = {field: 'experimentName', content: referenceCreatorInput.textContent}
-                searchExperiments(searchByName)
+                try{
+                    if(referenceCreatorInput.textContent!=''&&referenceCreatorInput.textContent!=null){
+                        const match = await searchExperiments(searchByName)
+                        createReferenceDropDown(match)
+                    }else{
+                        referenceDropDown.innerHTML='';
+                        referenceDropDown.classList.remove('showDropDown')
+                    }
+                }catch(err){
+                    console.error(err)
+                }
             })
+            referenceCreatorInput.addEventListener('mouseleave', ()=>{
+                const hoverField = document.elementFromPoint(event.clientX, event.clientY)
+                console.log(hoverField)
+                if(!hoverField.classList.contains('dropDownItem')&&!hoverField.classList.contains('dropDownList')){
+                    referenceDropDown.classList.remove('showDropDown')
+                    if(referenceCreatorInput.getAttribute('data-raw') == ''){
+                        console.log(referenceCreatorInput.getAttribute('placeholder'))
+                        referenceCreatorInput.innerHTML = referenceCreatorInput.getAttribute('placeholder');
+                    }
+                    referenceCreatorInput.dataset.focus='inactive'
+                    referenceCreatorInput.blur()
+                }
+            })
+
+            referenceCreatorInput.addEventListener('blur', ()=>{
+                const hoverField = document.elementFromPoint(event.clientX, event.clientY)
+                console.log(hoverField)
+                if(!hoverField.classList.contains('dropDownItem')&&!hoverField.classList.contains('dropDownList')){
+                    referenceDropDown.classList.remove('showDropDown')
+                if(referenceCreatorInput.getAttribute('data-raw') == ''){
+                    console.log(referenceCreatorInput.getAttribute('placeholder'))
+                    referenceCreatorInput.innerHTML = referenceCreatorInput.getAttribute('placeholder');
+                }
+                    referenceCreatorInput.dataset.hoverState='inactive'
+                }
+            })
+            referenceCreatorInput.addEventListener('focus', ()=>{
+                if(referenceCreatorInput.getAttribute('data-raw') == ''){
+                    referenceCreatorInput.innerHTML = ''
+                    console.log('empty')
+                     
+                }
+                referenceCreatorInput.dataset.hoverState='active'
+                if(referenceCreatorInput.getAttribute('data-raw')!=''){
+                    referenceDropDown.classList.add('showDropDown')
+                }
+            })
+            referenceCreatorInput.addEventListener('mouseenter', ()=>{
+                if(referenceCreatorInput.getAttribute('data-raw') == ''){
+                    referenceCreatorInput.innerHTML = ''
+                    console.log('empty')
+                    
+                }
+                referenceCreatorInput.dataset.focus='active'
+                referenceCreatorInput.focus()
+                moveCursorToEnd(referenceCreatorInput)
+                if(referenceCreatorInput.getAttribute('data-raw')!=''){
+                    referenceDropDown.classList.add('showDropDown');
+                }
+
+            })
+
+        }
+
+        async function createReferenceDropDown(array){
+            referenceDropDown.innerHTML=''
+            if(array.length>0){
+                array.forEach(experiment=>{
+                const dropDownEntry = document.createElement('a');
+                dropDownEntry.classList.add('dropDownItem')
+                dropDownEntry.textContent = `${experiment.eId}. ${experiment.experimentName}`
+                referenceDropDown.appendChild(dropDownEntry);
+                dropDownEntry.addEventListener('click', async () => {
+                    console.log(`${dropDownEntry.innerHTML}`)
+                    try{
+                        urlParams = new URLSearchParams(window.location.search);
+                        const response = await fetch(`/relatedExperiment/addReference?eId=${urlParams.get('eId')}&referenceId=${experiment.eId}`)
+                        referenceDropDown.classList.remove('showDropDown')
+                        if(!response.ok){
+                        const responseContent = await response.json();
+                        console.error(responseContent)
+                    };
+                    const responseContent = await response.json();
+                    addNewReferenceToList(experiment.eId, experiment.experimentName)
+                    referenceCreatorInput.innerHTML = ''
+                    referenceCreatorInput.setAttribute('data-raw', '')
+                    referenceCreatorInput.blur();
+                    referenceCreatorInput.innerText=referenceCreatorInput.getAttribute('placeholder');
+                    referenceDropDown.innerHTML='';
+                    }catch(err){
+                        console.error(err)
+                    }   
+                })
+                referenceDropDown.classList.add('showDropDown')
+            })
+            }else{
+                referenceDropDown.classList.remove('showDropDown')
+            }
         }
 
         async function searchExperiments(search){
@@ -506,7 +636,8 @@
                 };
                 const responseContent = await response.json();
                 if(responseContent!=null){
-                    console.log(responseContent)
+                    console.log(responseContent);
+                    return responseContent;
                 }
             } catch(err){
                 console.error(err)
@@ -545,10 +676,10 @@
         })
 
         async function inputFormatter(field){
+
             const editmode = function(event){
                 if(field.getAttribute('data-raw') == ''){
-                    field.innerHTML = ''
-                    console.log('empty')
+                    field.innerHTML = '';
                 }
                 else{
                     field.innerHTML = field.getAttribute('data-raw');
@@ -558,15 +689,18 @@
                 // Event-specific logic
                 if (event.type === 'focus') {
                     this.dataset.focusState = 'active';
-                } else if (event.type === 'mouseenter') {
+                } else if (event.type == 'mouseenter') {
                     this.dataset.hoverState = 'active';
+                    this.focus();
                 }
+                moveCursorToEnd(field)
             }
+
+            
 
 
             const saveAndFormatting = function(event){
                 if(field.getAttribute('data-raw') == ''||field.getAttribute('data-raw')=='<br>'){
-                    console.log(field.getAttribute('placeholder'))
                     field.innerHTML = field.getAttribute('placeholder');
                 } else {
                     if(window.location.pathname.split('/')[2] != 'new'){
@@ -585,8 +719,10 @@
                     this.dataset.focusState = 'inactive';
                 } else if (event.type === 'mouseleave') {
                     this.dataset.hoverState = 'inactive';
+                    this.blur();
                 }
             }
+
             field.addEventListener('focus', editmode);
             field.addEventListener('mouseenter', editmode)
 
@@ -594,6 +730,16 @@
             field.addEventListener('mouseleave', saveAndFormatting)
                  
         }
+
+        function moveCursorToEnd(field){
+                const range = document.createRange();
+                range.selectNodeContents(field);
+                range.collapse(false);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range)
+                field.focus()
+            }
 
     </script>
 </body>

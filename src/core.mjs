@@ -134,8 +134,13 @@ export function getMaxCount(){
     try{
         const select = db.prepare(`SELECT eId FROM mainTable ORDER BY eId DESC LIMIT 1`)
         const count = select.get();
-        console.log(count)
-        return count
+        if(count!=null){
+            console.log(count)
+            return count;
+        }else{
+            console.log('no experiments')
+            return {eId: 0};
+        }
     } catch(err){
         throw new Error(err)
     }
